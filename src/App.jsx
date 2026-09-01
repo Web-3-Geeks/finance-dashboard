@@ -3,8 +3,10 @@ import TransactionForm from "./components/TransactionForm/TransactionForm";
 import TransactionList from "./components/TransactionList/TransactionList";
 import Filters from "./components/Filters/Filters";
 import Charts from "./components/Charts/Charts";
+import { useState } from "react";
 
 function App() {
+  const [ editingTransaction , setEditingTransaction ] = useState(null);
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="border-b bg-white">
@@ -28,9 +30,14 @@ function App() {
       <main className="mx-auto max-w-7xl space-y-6 px-6 py-6">
         <SummaryCards />
 
-        <TransactionForm />
+        <TransactionForm 
+        editingTransaction={editingTransaction}
+        onDoneEditing={() => setEditingTransaction(null)}
+        />
 
-        <TransactionList />
+        <TransactionList 
+        onEdit={setEditingTransaction}
+        />
 
         <Filters />
 

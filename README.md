@@ -97,3 +97,48 @@ src/
 ├── App.jsx
 ├── main.jsx
 └── index.css
+```
+
+## Day 2 Requirements
+
+### 1. Global State Management
+
+State is managed with React's Context API instead of local component state.
+
+- `src/context/TransactionContext.jsx` defines `TransactionContext` and a `TransactionProvider` that holds the `transactions` array and exposes `addTransaction`, `deleteTransaction`, and `updateTransaction`.
+- `App.jsx` (via `main.jsx`) wraps the whole app in `TransactionProvider`, so any component can read or update transactions without prop drilling.
+- `src/hooks/useTransactions.js` is a custom hook that wraps `useContext(TransactionContext)` and additionally derives `totalIncome`, `totalExpense`, and `netBalance` from the transaction list. Components use this hook instead of talking to the context directly.
+
+### 2. Transaction Form
+
+`TransactionForm` is a fully controlled form:
+
+- Type (income/expense), amount, category, description, and date are all tied to a single `formData` state object via a shared `handleChange` handler.
+- On submit, a `validate()` function checks that the amount is a positive number and that category/description are filled in, showing inline error messages under each field when they aren't.
+- If the form is valid, it either calls `addTransaction` (new entry, with an id from `generateId()`) or `updateTransaction` (when editing an existing transaction), then resets itself.
+
+### 3. Transaction List
+
+`TransactionList` reads live data from `useTransactions()`, sorts it by date (most recent first), and color-codes each row green for income and red for expense. Each row has Edit and Delete actions:
+
+- Delete calls `deleteTransaction(id)` directly.
+- Edit passes the transaction up to `App.jsx`, which stores it as `editingTransaction` and passes it into `TransactionForm`, pre-filling the form for editing.
+
+### 4. Data Persistence
+
+Transactions are persisted to `localStorage`:
+
+- On first load, `TransactionProvider` reads the `"transactions"` key from `localStorage`; if nothing is stored yet, it falls back to the Day 1 sample data.
+- A `useEffect` watches the `transactions` state and writes it back to `localStorage` (as JSON) on every add, edit, and delete, so data survives a page refresh.
+
+### 5. Custom Hook
+
+`useTransactions` (in `src/hooks/`) centralizes access to the transaction context and its derived totals, so components like `SummaryCards` just call the hook instead of recalculating totals themselves.
+
+### 6. Utils
+
+`src/utils/transactionUtils.js` contains:
+
+- `formatCurrency(amount)` — formats numbers as USD currency strings.
+- `formatDate(date)` — formats a date string into a readable form (e.g. "Aug 1, 2026").
+- `generateId()` — generates a unique id for new transactions using `crypto.randomUUID()`.

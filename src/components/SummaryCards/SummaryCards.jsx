@@ -1,4 +1,9 @@
+import useTransactions from "../../hooks/useTransactions";
+import { formatCurrency } from "../../utils/transactionUtils";
+
 function SummaryCards() {
+  const { totalIncome, totalExpense, netBalance } =  useTransactions();
+
   return (
     <section>
       <h2 className="mb-4 text-xl font-semibold text-gray-900">
@@ -9,8 +14,8 @@ function SummaryCards() {
         <div className="rounded-xl bg-white p-6 shadow-sm">
           <p className="text-sm text-gray-500">Total Balance</p>
 
-          <h3 className="mt-2 text-2xl font-bold text-gray-900">
-            $147,500
+          <h3 className={`mt-2 text-2xl font-bold ${netBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
+            {formatCurrency(netBalance)}
           </h3>
         </div>
 
@@ -18,7 +23,7 @@ function SummaryCards() {
           <p className="text-sm text-gray-500">Total Income</p>
 
           <h3 className="mt-2 text-2xl font-bold text-gray-900">
-            $175,000
+            {formatCurrency(totalIncome)}
           </h3>
         </div>
 
@@ -26,7 +31,7 @@ function SummaryCards() {
           <p className="text-sm text-gray-500">Total Expenses</p>
 
           <h3 className="mt-2 text-2xl font-bold text-gray-900">
-            $27,500
+            {formatCurrency(totalExpense)}
           </h3>
         </div>
       </div>
