@@ -9,6 +9,16 @@ function TransactionProvider({ children }) {
     return stored ? JSON.parse(stored) : initialTransactions;
   });
 
+  const [ filters, setFilters] = useState({
+    type: "all",
+    category: "all",
+    search: "",
+    startDate: "",
+    endDate: "",
+    minAmount: "",
+    maxAmount: ""
+  })
+
   const addTransaction = (transaction) => {
     setTransactions((currentTransactions) => [
       ...currentTransactions,
@@ -43,6 +53,8 @@ function TransactionProvider({ children }) {
         addTransaction,
         deleteTransaction,
         updateTransaction,
+        filters,
+        setFilters
       }}
     >
       {children}
