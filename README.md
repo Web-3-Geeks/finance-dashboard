@@ -142,3 +142,45 @@ Transactions are persisted to `localStorage`:
 - `formatCurrency(amount)` — formats numbers as USD currency strings.
 - `formatDate(date)` — formats a date string into a readable form (e.g. "Aug 1, 2026").
 - `generateId()` — generates a unique id for new transactions using `crypto.randomUUID()`.
+
+## Day 3 Requirements
+
+### 1. Filters — Functional
+
+The `Filters` component has real, controlled inputs: a search box (matches by description, case-insensitive), a Type dropdown (All/Income/Expense), a Category dropdown, a Date Range (start/end), and an Amount Range (min/max). All of them update instantly as you type/select — there's no submit button, and the list, summary cards, and charts all re-render immediately. A "Clear Filters" button resets every field back to its default.
+
+### 2. Filter State & Filter Logic
+
+**Where the filter state lives:** in `TransactionContext`, alongside `transactions`. It was kept in Context (rather than local component state or URL params) because four separate components — `Filters`, `TransactionList`, `SummaryCards`, and `Charts` — all need to read the same filter values, and Context avoids prop-drilling them through `App.jsx`.
+
+**How filtering is implemented:** `useTransactions.js` derives a `filteredTransactions` array with `useMemo(() => ..., [transactions, filters])`. It is *not* stored as separate state — it's recalculated from `transactions` and `filters` whenever either changes, and memoized so it doesn't recompute on unrelated re-renders. Each active filter is checked with an early `return false`, so all active filters must pass (AND logic) for a transaction to be included.
+
+`filteredTransactions` (not the raw `transactions`) feeds `TransactionList`, the `totalIncome`/`totalExpense`/`netBalance` used by `SummaryCards`, and the chart data in `Charts`, so everything downstream reacts to the active filters automatically.
+
+### 3. Charts
+
+Three charts are implemented with Recharts, all driven by `filteredTransactions`:
+
+- **Income vs Expense** — bar chart, grouped by date, using `groupByDate()`.
+- **Spending by Category** — donut chart, expense transactions only, using `groupByCategory()`.
+- **Balance Trend Over Time** — line chart of the running/cumulative balance, using `calculateCumulativeBalance()`.
+
+Each chart shows a "No data for selected filters" empty state when its data array is empty.
+
+### 4. Chart Data Transformation
+
+Added to `src/utils/transactionUtils.js`, kept separate from the chart components themselves:
+
+- `groupByCategory(transactions)` — sums expense amounts per category, returns `{ name, value }[]` for the pie chart.
+- `groupByDate(transactions)` — sums income and expense per date, returns `{ date, income, expense }[]` sorted chronologically, for the bar chart.
+- `calculateCumulativeBalance(transactions)` — sorts transactions chronologically and walks through them building a running balance, returning `{ date, balance }[]` for the line chart.
+
+`Charts.jsx` only calls these helpers and renders the result — it has no calculation logic of its own.
+
+### 5. Summary Cards — Filter-Aware
+
+`SummaryCards` now also reads `filters` from `useTransactions()` and shows a small "Filtered results" badge whenever any filter is different from its default value, so it's clear the numbers shown aren't the full dataset's totals.
+
+### 6. Responsive & UX Polish
+
+Filters and charts use responsive grid layouts that stack on smaller screens, and both the transaction list and charts have empty states for when filters produce zero results.
