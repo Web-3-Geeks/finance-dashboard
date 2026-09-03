@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import useTransactions from "../../hooks/useTransactions";
 import { generateId } from "../../utils/transactionUtils";
+import { useToast } from "../../context/ToastContext";
 
 function TransactionForm({ editingTransaction, onDoneEditing }) {
   const [formData, setFormData] = useState({
@@ -13,6 +14,7 @@ function TransactionForm({ editingTransaction, onDoneEditing }) {
 
   const [errors, setErrors] = useState({});
   const { addTransaction, updateTransaction } = useTransactions();
+  const {showToast} = useToast();
 
   useEffect(() => {
     if (editingTransaction) {
@@ -30,6 +32,7 @@ function TransactionForm({ editingTransaction, onDoneEditing }) {
   };
 
   const handleSubmit = (e) => {
+    
     // stop the browser's default full-page reload on submit
     e.preventDefault();
 
@@ -48,12 +51,14 @@ function TransactionForm({ editingTransaction, onDoneEditing }) {
         amount: Number(formData.amount),
       });
       onDoneEditing();
+      showToast("Transaction updated successfully");
     } else {
       addTransaction({
         id: generateId(),
         ...formData,
         amount: Number(formData.amount), // input value is a string, needs to be a number
       });
+      showToast("Transaction added successfully")
     }
 
     setFormData({

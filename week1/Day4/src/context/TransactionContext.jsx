@@ -5,8 +5,13 @@ const TransactionContext = createContext();
 
 function TransactionProvider({ children }) {
   const [transactions, setTransactions] = useState(() => {
-    const stored = localStorage.getItem("transactions");
-    return stored ? JSON.parse(stored) : initialTransactions;
+    try {
+      const stored = localStorage.getItem("transactions");
+      return stored ? JSON.parse(stored) : initialTransactions;
+    } catch (error) {
+      console.error("Failed to load transactions from localStorage:", error);
+      return initialTransactions;
+    }
   });
 
   const [ filters, setFilters] = useState({
@@ -43,7 +48,11 @@ function TransactionProvider({ children }) {
   };
 
   useEffect(() => {
-    localStorage.setItem("transactions", JSON.stringify(transactions));
+    try {
+      localStorage.setItem("transactions", JSON.stringify(transactions));
+    } catch (error) {
+      console.error("Failed to save transactions to localStorage:", error);
+    }
   }, [transactions]);
 
   return (
