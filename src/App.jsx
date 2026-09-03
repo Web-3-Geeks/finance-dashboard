@@ -4,6 +4,9 @@ import TransactionForm from "./components/TransactionForm/TransactionForm";
 import TransactionList from "./components/TransactionList/TransactionList";
 import Filters from "./components/Filters/Filters";
 import Charts from "./components/Charts/Charts";
+import Toast from "./components/Toast/Toast";
+import ExportButton from "./components/ExportButton/ExportButton";
+import LiveSimulator from "./components/LiveSimulator/LiveSimulator";
 
 function App() {
   const [editingTransaction, setEditingTransaction] = useState(null);
@@ -33,9 +36,10 @@ function App() {
             </h1>
           </div>
 
-          <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-            Export CSV
-          </button>
+          <div className="flex items-center gap-3">
+            <LiveSimulator />
+            <ExportButton />
+          </div>
         </div>
       </header>
 
@@ -59,6 +63,8 @@ function App() {
 
         <TransactionList onEdit={setEditingTransaction} />
       </main>
+
+      <Toast />
     </div>
   );
 }

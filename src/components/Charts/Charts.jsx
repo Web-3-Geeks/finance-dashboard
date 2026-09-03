@@ -21,6 +21,7 @@ import {
   groupByDate,
   calculateCumulativeBalance,
 } from "../../utils/transactionUtils";
+import { useMemo } from "react";
 
 const COLORS = ["#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#7c3aed", "#0891b2"];
 
@@ -35,9 +36,9 @@ function EmptyState() {
 function Charts() {
   const { filteredTransactions } = useTransactions();
 
-  const trendData = groupByDate(filteredTransactions);
-  const categoryData = groupByCategory(filteredTransactions);
-  const balanceData = calculateCumulativeBalance(filteredTransactions);
+  const trendData = useMemo(() => groupByDate(filteredTransactions), [filteredTransactions]);
+  const categoryData = useMemo(() => groupByCategory(filteredTransactions), [filteredTransactions]);
+  const balanceData = useMemo(() => calculateCumulativeBalance(filteredTransactions), [filteredTransactions]);
 
   return (
     <div className="space-y-6">

@@ -184,3 +184,35 @@ Added to `src/utils/transactionUtils.js`, kept separate from the chart component
 ### 6. Responsive & UX Polish
 
 Filters and charts use responsive grid layouts that stack on smaller screens, and both the transaction list and charts have empty states for when filters produce zero results.
+
+## Day 4 Requirements
+
+### 1. CSV Export
+
+`ExportButton.jsx` exports the *currently filtered* transaction list, not the full dataset. `convertToCSV()` (in `transactionUtils.js`) builds the CSV string with the required headers (`id, type, amount, category, description, date`) and properly escapes any field containing a comma, quote, or newline (wraps it in quotes, doubles internal quotes). `downloadCSV()` wraps the string in a `Blob`, creates an object URL, and triggers a browser download via a programmatically-clicked `<a download>` link, named `transactions_YYYY-MM-DD.csv`. The button shows a disabled/spinner state while exporting and a success toast once the download starts.
+
+### 2. Real-Time / Live Update Simulation
+
+`src/utils/transactionSimulator.js` exports `generateRandomTransaction()`, a pure function that builds a random transaction (weighted ~30% income / 70% expense, category and description matched to the type, amount, today's date). `LiveSimulator.jsx` provides a "Simulate Transactions" toggle; while on, a `useEffect`-managed `setInterval` (15s) calls `generateRandomTransaction()` and passes the result straight into `addTransaction()` — the same context action used by the form, so there's no separate code path for simulated vs. manually-added transactions. A pulsing "Live" badge shows while the simulation is running, and each simulated transaction triggers a toast. The interval is cleared on toggle-off and on unmount.
+
+### 3. Notifications / Toast System
+
+`ToastContext` (in `src/context/`) holds a list of toasts and exposes `showToast(message, type)`; each toast auto-dismisses after ~3.5s or can be closed manually. `Toast.jsx` renders them stacked in the bottom-right corner, color-coded by type (success/error/info). Wired into: adding a transaction, updating a transaction, deleting a transaction (via the confirm modal), CSV export success, and each simulated transaction arriving.
+
+### 4. Performance Pass
+
+- `Charts.jsx` wraps each chart-data transform (`groupByDate`, `groupByCategory`, `calculateCumulativeBalance`) in `useMemo`, keyed on `filteredTransactions`, so they only recompute when the underlying data actually changes.
+- `filteredTransactions` and the summary totals were already derived via `useMemo` in `useTransactions.js` (Day 3).
+- Each transaction row was extracted into its own `TransactionRow.jsx` component wrapped in `React.memo`, so toggling one row's action menu (or any other unrelated state change) no longer re-renders every other row.
+
+### 5. Error Handling & Edge Cases
+
+- `TransactionContext.jsx` wraps both the initial `localStorage.getItem`/`JSON.parse` and the persistence `useEffect`'s `localStorage.setItem` in `try/catch`. Corrupted stored JSON falls back to the Day 1 sample data instead of crashing the app; a failed write (quota exceeded, private browsing) is caught and logged, leaving the app running on in-memory state for that session.
+- `useTransactions()` guards against being called outside `TransactionProvider` — it throws a clear error instead of crashing on `Cannot destructure property of undefined`.
+- `TransactionList` distinguishes an empty *dataset* ("No transactions yet — add your first one above.") from an empty *filtered result* ("No transactions match your filters."), and `SummaryCards`/`Charts` already handle zero transactions without crashing.
+
+### 6. UI/UX Polish
+
+- Added a `ConfirmModal` component — deleting a transaction now requires confirming in a modal instead of deleting immediately.
+- No fabricated loading skeletons were added: all data in this app loads synchronously from `localStorage`, so there's no real loading window for a skeleton to cover.
+- Consistent card/spacing/color conventions (rounded-xl white cards, blue/green/red semantic colors) applied across Summary Cards, Filters, Charts, the transaction table, and the new Toast/Modal/LiveSimulator components.

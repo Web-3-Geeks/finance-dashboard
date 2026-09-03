@@ -1,3 +1,4 @@
+
 export const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-US", {
         style: "currency",
@@ -60,4 +61,38 @@ export const calculateCumulativeBalance = (transactions) => {
         runningBalance += transaction.type === "income" ? transaction.amount : -transaction.amount;
         return { date: transaction.date, balance: runningBalance };
     });
+}
+
+const escapeCSVField = (value) => {
+    const stringValue = String(value);
+
+    if (/[",\n]/.test(stringValue)) {
+        return `"${stringValue.replace(/"/g, '""')}"`;
+    }
+
+    return stringValue;
+};
+
+export const convertToCSV = (transactions) => {
+    const headers = ["id", "type", "amount", "category", "description", "date"]
+
+    const rows = transactions.map((transaction) => 
+        headers.map((header) => escapeCSVField(transaction[header])).join(","),
+    );
+
+    return [headers.join(","), ...rows].join("\n")
+};
+
+export const downloadCSV = (csvContent, filename) => {
+    const blob = new Blob([csvContent], {type: "text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
 }
