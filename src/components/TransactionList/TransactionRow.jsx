@@ -11,7 +11,10 @@ function TransactionRow({
 }) {
   return (
     <tr className="text-sm hover:bg-gray-50">
-      <td className="px-4 py-4 font-medium text-gray-900">
+      <td
+        className="max-w-[220px] truncate px-4 py-4 font-medium text-gray-900"
+        title={transaction.description}
+      >
         {transaction.description}
       </td>
 
@@ -21,9 +24,7 @@ function TransactionRow({
         {formatDate(transaction.date)}
       </td>
 
-      <td
-        className={`px-4 py-4 font-semibold text-gray-900`}
-      >
+      <td className="px-4 py-4 font-semibold text-gray-900">
         {transaction.type === "income" ? "+" : "-"}
         {formatCurrency(transaction.amount)}
       </td>
@@ -44,6 +45,9 @@ function TransactionRow({
         <button
           type="button"
           onClick={onToggleMenu}
+          aria-label={`Actions for ${transaction.description}`}
+          aria-haspopup="true"
+          aria-expanded={isMenuOpen}
           className="cursor-pointer rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
         >
           <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">

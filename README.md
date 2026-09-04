@@ -202,7 +202,7 @@ Filters and charts use responsive grid layouts that stack on smaller screens, an
 ### 4. Performance Pass
 
 - `Charts.jsx` wraps each chart-data transform (`groupByDate`, `groupByCategory`, `calculateCumulativeBalance`) in `useMemo`, keyed on `filteredTransactions`, so they only recompute when the underlying data actually changes.
-- `filteredTransactions` and the summary totals were already derived via `useMemo` in `useTransactions.js` (Day 3).
+- `filteredTransactions` is derived via `useMemo` in `useTransactions.js` (Day 3). The summary totals (`totalIncome`/`totalExpense`/`netBalance`) were fixed on Day 5 to also be computed inside a `useMemo`, keyed on `filteredTransactions` — they were previously recalculated on every render of every component that calls the hook.
 - Each transaction row was extracted into its own `TransactionRow.jsx` component wrapped in `React.memo`, so toggling one row's action menu (or any other unrelated state change) no longer re-renders every other row.
 
 ### 5. Error Handling & Edge Cases
@@ -216,3 +216,60 @@ Filters and charts use responsive grid layouts that stack on smaller screens, an
 - Added a `ConfirmModal` component — deleting a transaction now requires confirming in a modal instead of deleting immediately.
 - No fabricated loading skeletons were added: all data in this app loads synchronously from `localStorage`, so there's no real loading window for a skeleton to cover.
 - Consistent card/spacing/color conventions (rounded-xl white cards, blue/green/red semantic colors) applied across Summary Cards, Filters, Charts, the transaction table, and the new Toast/Modal/LiveSimulator components.
+
+## Day 5 — Final Documentation & Production Readiness
+
+### Application Features
+
+- Add, edit, and delete income/expense transactions, with inline validation.
+- Real-time filtering by type, category, description search, date range, and amount range (combined with AND logic).
+- Summary cards (balance/income/expense) and three charts (income vs. expense, spending by category, cumulative balance trend), all reactive to the active filters.
+- CSV export of the currently filtered transactions.
+- A toggleable live transaction simulator for demoing real-time updates.
+- Toast notifications for all key actions, and a confirm-before-delete modal.
+
+### How Transaction Data Is Stored
+
+All transactions live in React state inside `TransactionProvider` (`src/context/TransactionContext.jsx`) and are persisted to the browser's `localStorage` under the key `"transactions"`. On load, the provider reads and `JSON.parse`s that key; if nothing is stored (first visit) it falls back to the Day 1 sample data. Every time the transaction list changes, a `useEffect` re-serializes it back to `localStorage`, so data survives page refreshes without any backend.
+
+### CSV Export Behavior
+
+`ExportButton.jsx` exports the **currently filtered** list, not the full dataset. `convertToCSV()` builds a CSV with headers `id, type, amount, category, description, date`, escaping any field that contains a comma, quote, or newline. `downloadCSV()` wraps the result in a `Blob`, creates an object URL, and triggers a download named `transactions_YYYY-MM-DD.csv` via a programmatically-clicked link (the object URL is revoked afterward to avoid leaking memory). If there's nothing to export, the button shows a toast instead of downloading an empty file.
+
+### Live Simulation Mechanism & Toggle Behavior
+
+`generateRandomTransaction()` (in `src/utils/transactionSimulator.js`) is a pure function that builds a plausible random transaction — type is weighted ~30% income / 70% expense, and the description pool is matched to the type (so income transactions get descriptions like "Salary deposit" rather than "Coffee shop"), category is forced to "Salary" for income and picked from the non-Salary categories for expenses.
+
+The "Simulate Transactions" toggle in `LiveSimulator.jsx` controls a `useEffect`-managed `setInterval` (15s). While on, each tick generates one random transaction and passes it straight into the same `addTransaction()` context action the form uses — there's no separate "simulated" code path, so it goes through the same validation-free but structurally-identical flow, gets the same id generation, and persists the same way. Toggling off (or unmounting the component) runs the effect's cleanup, which calls `clearInterval` so no orphaned timers keep running. A pulsing green "Live" badge is shown only while the simulation is active, and each arrival triggers a toast notification as the visual indicator.
+
+### Toast Notification System
+
+`ToastContext` (`src/context/ToastContext.jsx`) holds an array of toasts; `useToast()` (`src/hooks/useToast.js`) exposes `showToast(message, type)` and throws a clear error if called outside the provider. Each toast auto-dismisses after ~3.5s via `setTimeout`, or can be dismissed manually. `Toast.jsx` renders them stacked bottom-right, color-coded by type (success/error/info). Wired into: add, update, delete, CSV export (success and "nothing to export"), and each simulated transaction arriving.
+
+### Error Handling & localStorage Fallback
+
+- Both the initial `localStorage.getItem`/`JSON.parse` and the persistence `useEffect`'s `localStorage.setItem` are wrapped in `try/catch` in `TransactionContext.jsx`. Corrupted stored JSON falls back to the sample data instead of crashing the app; a failed write (quota exceeded, private browsing) is caught and logged, and the app keeps running on in-memory state for that session.
+- `useTransactions()` and `useToast()` both guard against being called outside their respective providers, throwing a descriptive error instead of a confusing "cannot destructure property of undefined."
+- Empty states are handled everywhere: an empty dataset shows "No transactions yet," an empty filtered result shows "No transactions match your filters," summary cards show `$0.00` rather than `NaN`, and each chart shows a "No data for selected filters" placeholder instead of rendering broken/empty axes.
+
+### Performance Optimizations
+
+- `filteredTransactions` and the summary totals are derived with `useMemo`, keyed on `[transactions, filters]`, rather than stored as separate state.
+- Chart data transforms (`groupByDate`, `groupByCategory`, `calculateCumulativeBalance`) are each wrapped in `useMemo` in `Charts.jsx`, keyed on `filteredTransactions`.
+- Each transaction row is its own `TransactionRow.jsx` component wrapped in `React.memo`, so toggling one row's action menu doesn't re-render the rest of the table.
+- The `setInterval` in `LiveSimulator.jsx` and the `mousedown` listener used to close the row action menu are both cleaned up in their effects' return functions to avoid leaks.
+
+### Accessibility
+
+All form and filter inputs have properly associated labels (`htmlFor`/`id`, or `aria-label` where a single visual label covers a pair of inputs like a date range). Icon-only buttons (the row action menu) have `aria-label`s describing their target. The confirm-delete modal is a labeled `role="dialog"`, closes on `Escape`, and auto-focuses its primary action. Income/expense are distinguished by both color and text/icon (not color alone).
+
+### How to Run and Test the Project
+
+```bash
+npm install
+npm run dev      # start the dev server
+npm run build    # production build (also used as a quick compile/type-error check)
+npm run lint     # ESLint pass
+```
+
+Manual test pass performed for Day 5 covered: full CRUD + validation, delete confirm/cancel, all filters individually and combined, CSV export with an active filter, live simulation on/off (including verifying the interval stops), toast coverage for every action, behavior after deleting all transactions, persistence across a refresh, and recovery from manually-corrupted `localStorage` data. Responsive behavior was checked at mobile/tablet/desktop widths via browser dev tools.

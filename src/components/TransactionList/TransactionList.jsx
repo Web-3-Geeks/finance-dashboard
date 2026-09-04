@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import useTransactions from "../../hooks/useTransactions";
-import { useToast } from "../../context/ToastContext";
+import useToast from "../../hooks/useToast";
 import TransactionRow from "./TransactionRow";
 import ConfirmModal from "../ConfirmModal/ConfirmModal";
 
@@ -27,8 +27,12 @@ function TransactionList({ onEdit }) {
   }, [openMenuId]);
 
   // spread into a new array first, .sort() mutates in place otherwise
-  const sortedTransactions = [...filteredTransactions].sort(
-    (a, b) => new Date(b.date) - new Date(a.date),
+  const sortedTransactions = useMemo(
+    () =>
+      [...filteredTransactions].sort(
+        (a, b) => new Date(b.date) - new Date(a.date),
+      ),
+    [filteredTransactions],
   );
 
   const handleConfirmDelete = () => {

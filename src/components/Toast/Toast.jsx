@@ -1,4 +1,4 @@
-import { useToast } from "../../context/ToastContext";
+import useToast from "../../hooks/useToast";
 
 const STYLES = {
   success: "bg-green-50 border-green-200 text-green-800",

@@ -1,26 +1,30 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import useTransactions from "../../hooks/useTransactions";
 import { generateId } from "../../utils/transactionUtils";
-import { useToast } from "../../context/ToastContext";
+import useToast from "../../hooks/useToast";
+
+const DEFAULT_FORM_DATA = {
+  type: "expense",
+  amount: "",
+  category: "Food",
+  description: "",
+  date: new Date().toISOString().split("T")[0],
+};
 
 function TransactionForm({ editingTransaction, onDoneEditing }) {
-  const [formData, setFormData] = useState({
-    type: "expense",
-    amount: "",
-    category: "Food",
-    description: "",
-    date: new Date().toISOString().split("T")[0],
-  });
-
+  const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
   const [errors, setErrors] = useState({});
   const { addTransaction, updateTransaction } = useTransactions();
-  const {showToast} = useToast();
+  const { showToast } = useToast();
 
-  useEffect(() => {
-    if (editingTransaction) {
-      setFormData(editingTransaction);
-    }
-  }, [editingTransaction]);
+  // Track the transaction we last synced the form to, so we can react to a
+  // new editingTransaction prop during render instead of in a useEffect
+  // (avoids the extra render pass a setState-in-effect would cause).
+  const [syncedTransaction, setSyncedTransaction] = useState(null);
+  if (editingTransaction !== syncedTransaction) {
+    setSyncedTransaction(editingTransaction);
+    setFormData(editingTransaction || DEFAULT_FORM_DATA);
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -32,7 +36,6 @@ function TransactionForm({ editingTransaction, onDoneEditing }) {
   };
 
   const handleSubmit = (e) => {
-    
     // stop the browser's default full-page reload on submit
     e.preventDefault();
 
@@ -58,16 +61,10 @@ function TransactionForm({ editingTransaction, onDoneEditing }) {
         ...formData,
         amount: Number(formData.amount), // input value is a string, needs to be a number
       });
-      showToast("Transaction added successfully")
+      showToast("Transaction added successfully");
     }
 
-    setFormData({
-      type: "expense",
-      amount: "",
-      category: "Food",
-      description: "",
-      date: new Date().toISOString().split("T")[0],
-    });
+    setFormData(DEFAULT_FORM_DATA);
   };
 
   const validate = () => {
@@ -112,14 +109,15 @@ function TransactionForm({ editingTransaction, onDoneEditing }) {
       </div>
 
       <form className="space-y-5" onSubmit={handleSubmit}>
-        <div>
-          <label className="mb-2 block text-sm font-medium text-gray-700">
+        <fieldset>
+          <legend className="mb-2 block text-sm font-medium text-gray-700">
             Type
-          </label>
+          </legend>
 
           <div className="grid grid-cols-2 gap-2 rounded-lg bg-gray-100 p-1">
             <button
               type="button"
+              aria-pressed={formData.type === "expense"}
               onClick={() => handleTypeSelect("expense")}
               className={`cursor-pointer rounded-md py-2 text-sm font-medium transition-colors duration-200 ${
                 formData.type === "expense"
@@ -131,6 +129,7 @@ function TransactionForm({ editingTransaction, onDoneEditing }) {
             </button>
             <button
               type="button"
+              aria-pressed={formData.type === "income"}
               onClick={() => handleTypeSelect("income")}
               className={`cursor-pointer rounded-md py-2 text-sm font-medium transition-colors duration-200 ${
                 formData.type === "income"
@@ -141,10 +140,13 @@ function TransactionForm({ editingTransaction, onDoneEditing }) {
               Income
             </button>
           </div>
-        </div>
+        </fieldset>
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="transaction-amount"
+            className="mb-2 block text-sm font-medium text-gray-700"
+          >
             Amount
           </label>
 
@@ -153,6 +155,7 @@ function TransactionForm({ editingTransaction, onDoneEditing }) {
               $
             </span>
             <input
+              id="transaction-amount"
               type="number"
               name="amount"
               value={formData.amount}
@@ -167,11 +170,15 @@ function TransactionForm({ editingTransaction, onDoneEditing }) {
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="transaction-category"
+            className="mb-2 block text-sm font-medium text-gray-700"
+          >
             Category
           </label>
 
           <select
+            id="transaction-category"
             className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             name="category"
             value={formData.category}
@@ -193,11 +200,15 @@ function TransactionForm({ editingTransaction, onDoneEditing }) {
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="transaction-date"
+            className="mb-2 block text-sm font-medium text-gray-700"
+          >
             Date
           </label>
 
           <input
+            id="transaction-date"
             type="date"
             className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             name="date"
@@ -207,11 +218,15 @@ function TransactionForm({ editingTransaction, onDoneEditing }) {
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="transaction-description"
+            className="mb-2 block text-sm font-medium text-gray-700"
+          >
             Description
           </label>
 
           <input
+            id="transaction-description"
             type="text"
             placeholder="Enter transaction description"
             className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"

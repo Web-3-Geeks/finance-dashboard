@@ -1,6 +1,6 @@
 import { useState } from "react";
 import useTransactions from "../../hooks/useTransactions";
-import { useToast } from "../../context/ToastContext";
+import useToast from "../../hooks/useToast";
 import { convertToCSV, downloadCSV } from "../../utils/transactionUtils";
 function ExportButton() {
   const [isExporting, setIsExporting] = useState(false);
@@ -8,17 +8,26 @@ function ExportButton() {
   const { showToast } = useToast();
 
   const handleExport = () => {
+    if (filteredTransactions.length === 0) {
+      showToast("No transactions to export", "error");
+      return;
+    }
+
     setIsExporting(true);
 
-    const csvContent = convertToCSV(filteredTransactions);
-    const filename = `transactions_${new Date().toISOString().split("T")[0]}.csv`;
-
-    downloadCSV(csvContent, filename);
-
-    showToast("CSV exported successfully")
+    // Deferred to the next tick so the browser actually paints the
+    // "Exporting..." state before the (synchronous) CSV work runs —
+    // otherwise the spinner would only appear after the file is already
+    // downloaded, which doesn't reflect real work happening.
     setTimeout(() => {
+      const csvContent = convertToCSV(filteredTransactions);
+      const filename = `transactions_${new Date().toISOString().split("T")[0]}.csv`;
+
+      downloadCSV(csvContent, filename);
+
+      showToast("CSV exported successfully");
       setIsExporting(false);
-    }, 1200);
+    }, 0);
   };
 
   return (

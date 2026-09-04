@@ -59,15 +59,21 @@ function useTransactions() {
     });
   }, [transactions, filters]);
 
-  const totalIncome = filteredTransactions
-    .filter((transaction) => transaction.type === "income")
-    .reduce((total, transaction) => total + transaction.amount, 0);
+  const { totalIncome, totalExpense, netBalance } = useMemo(() => {
+    const income = filteredTransactions
+      .filter((transaction) => transaction.type === "income")
+      .reduce((total, transaction) => total + transaction.amount, 0);
 
-  const totalExpense = filteredTransactions
-    .filter((transaction) => transaction.type === "expense")
-    .reduce((total, transaction) => total + transaction.amount, 0);
+    const expense = filteredTransactions
+      .filter((transaction) => transaction.type === "expense")
+      .reduce((total, transaction) => total + transaction.amount, 0);
 
-  const netBalance = totalIncome - totalExpense;
+    return {
+      totalIncome: income,
+      totalExpense: expense,
+      netBalance: income - expense,
+    };
+  }, [filteredTransactions]);
 
   return {
     transactions,

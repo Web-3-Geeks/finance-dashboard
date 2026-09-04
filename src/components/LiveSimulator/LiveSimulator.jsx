@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import useTransactions from "../../hooks/useTransactions";
-import { useToast } from "../../context/ToastContext";
+import useToast from "../../hooks/useToast";
 import { generateRandomTransaction } from "../../utils/transactionSimulator";
 
 function LiveSimulator() {

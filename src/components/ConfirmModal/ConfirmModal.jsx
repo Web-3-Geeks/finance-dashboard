@@ -1,4 +1,17 @@
+import { useEffect } from "react";
+
 function ConfirmModal({ isOpen, title, message, onConfirm, onCancel }) {
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") onCancel();
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onCancel]);
+
   if (!isOpen) return null;
 
   return (
@@ -32,6 +45,7 @@ function ConfirmModal({ isOpen, title, message, onConfirm, onCancel }) {
           <button
             type="button"
             onClick={onConfirm}
+            autoFocus
             className="cursor-pointer rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
           >
             Delete

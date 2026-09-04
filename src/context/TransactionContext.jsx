@@ -7,7 +7,10 @@ function TransactionProvider({ children }) {
   const [transactions, setTransactions] = useState(() => {
     try {
       const stored = localStorage.getItem("transactions");
-      return stored ? JSON.parse(stored) : initialTransactions;
+      if (!stored) return initialTransactions;
+
+      const parsed = JSON.parse(stored);
+      return Array.isArray(parsed) ? parsed : initialTransactions;
     } catch (error) {
       console.error("Failed to load transactions from localStorage:", error);
       return initialTransactions;
